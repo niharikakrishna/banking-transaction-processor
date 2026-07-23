@@ -107,7 +107,10 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public BigDecimal getBalance(UUID accountId) {
-        return null;
+
+        Account account = getAccount(accountId);
+
+        return account.getBalance();
     }
 
     @Override
