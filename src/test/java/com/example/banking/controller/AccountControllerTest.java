@@ -1,0 +1,149 @@
+package com.example.banking.controller;
+
+import com.example.banking.dto.*;
+import com.example.banking.enums.TransactionType;
+import com.example.banking.service.AccountService;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.ResponseEntity;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+class AccountControllerTest {
+
+    @Mock
+    private AccountService accountService;
+
+    @InjectMocks
+    private AccountController accountController;
+
+    @Test
+    void shouldCreateAccount() {
+
+        UUID accountId = UUID.randomUUID();
+
+        when(accountService.createAccount()).thenReturn(accountId);
+
+        CreateAccountResponse response = accountController.createAccount();
+
+        assertNotNull(response);
+        assertEquals(accountId, response.accountId());
+
+        verify(accountService).createAccount();
+    }
+
+    @Test
+    void shouldDeposit() {
+
+        UUID accountId = UUID.randomUUID();
+        AmountRequest request = new AmountRequest(BigDecimal.valueOf(500));
+
+        ResponseEntity<Void> response =
+                accountController.deposit(accountId, request);
+
+        assertEquals(204, response.getStatusCode().value());
+
+        verify(accountService)
+                .deposit(accountId, BigDecimal.valueOf(500));
+    }
+
+    @Test
+    void shouldWithdraw() {
+
+        UUID accountId = UUID.randomUUID();
+        AmountRequest request = new AmountRequest(BigDecimal.valueOf(250));
+
+        ResponseEntity<Void> response =
+                accountController.withdraw(accountId, request);
+
+        assertEquals(204, response.getStatusCode().value());
+
+        verify(accountService)
+                .withdraw(accountId, BigDecimal.valueOf(250));
+    }
+
+    @Test
+    void shouldTransfer() {
+
+        UUID from = UUID.randomUUID();
+        UUID to = UUID.randomUUID();
+
+        TransferRequest request = new TransferRequest(
+                from,
+                to,
+                BigDecimal.valueOf(300)
+        );
+
+        ResponseEntity<Void> response =
+                accountController.transfer(request);
+
+        assertEquals(204, response.getStatusCode().value());
+
+        verify(accountService)
+                .transfer(from, to, BigDecimal.valueOf(300));
+    }
+
+    @Test
+    void shouldReturnBalance() {
+
+        UUID accountId = UUID.randomUUID();
+
+        when(accountService.getBalance(accountId))
+                .thenReturn(BigDecimal.valueOf(1500));
+
+        ResponseEntity<BalanceResponse> response =
+                accountController.getBalance(accountId);
+
+        assertEquals(200, response.getStatusCode().value());
+        assertNotNull(response.getBody());
+        assertEquals(
+                BigDecimal.valueOf(1500),
+                response.getBody().balance()
+        );
+
+        verify(accountService).getBalance(accountId);
+    }
+
+    @Test
+    void shouldReturnTransactions() {
+
+        UUID accountId = UUID.randomUUID();
+
+        TransactionResponse transaction =
+                new TransactionResponse(
+                        UUID.randomUUID(),
+                        TransactionType.DEPOSIT,
+                        BigDecimal.valueOf(500),
+                        LocalDateTime.now()
+                );
+
+        when(accountService.getTransactions(accountId))
+                .thenReturn(List.of(transaction));
+
+        ResponseEntity<List<TransactionResponse>> response =
+                accountController.getTransactions(accountId);
+
+        assertEquals(200, response.getStatusCode().value());
+        assertNotNull(response.getBody());
+        assertEquals(1, response.getBody().size());
+
+        TransactionResponse result = response.getBody().get(0);
+
+        assertEquals(TransactionType.DEPOSIT, result.transactionType());
+        assertEquals(BigDecimal.valueOf(500), result.amount());
+
+        verify(accountService).getTransactions(accountId);
+    }
+}
