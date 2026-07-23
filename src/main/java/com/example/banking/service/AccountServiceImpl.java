@@ -1,6 +1,7 @@
 package com.example.banking.service;
 
 import com.example.banking.dto.TransactionResponse;
+import com.example.banking.entity.Account;
 import com.example.banking.repository.AccountRepository;
 import com.example.banking.repository.TransactionRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +22,14 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public UUID createAccount() {
-        return null;
+
+        Account account = Account.builder()
+                .balance(BigDecimal.ZERO)
+                .build();
+
+        Account savedAccount = accountRepository.save(account);
+
+        return savedAccount.getAccountId();
     }
 
     @Override
