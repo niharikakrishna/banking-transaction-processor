@@ -34,4 +34,14 @@ public class AccountController {
 
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping("/{accountId}/withdraw")
+    public ResponseEntity<Void> withdraw(
+            @PathVariable UUID accountId,
+            @Valid @RequestBody AmountRequest request) {
+
+        accountService.withdraw(accountId, request.amount());
+
+        return ResponseEntity.noContent().build();
+    }
 }

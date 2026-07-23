@@ -5,6 +5,7 @@ import com.example.banking.entity.Account;
 import com.example.banking.entity.Transaction;
 import com.example.banking.enums.TransactionType;
 import com.example.banking.exception.AccountNotFoundException;
+import com.example.banking.exception.InsufficientFundsException;
 import com.example.banking.exception.InvalidAmountException;
 import com.example.banking.repository.AccountRepository;
 import com.example.banking.repository.TransactionRepository;
@@ -55,6 +56,22 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public void withdraw(UUID accountId, BigDecimal amount) {
+
+        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new InvalidAmountException("Amount must be greater than zero.");
+        }
+
+        Account account = getAccount(accountId);
+
+        if (account.getBalance().compareTo(amount) < 0) {
+            throw new InsufficientFundsException("Insufficient balance.");
+        }
+
+        account.withdraw(amount);
+
+        accountRepository.save(account);
+
+        recordTransaction(account, TransactionType.WITHDRAWAL, amount);
     }
 
     @Override
