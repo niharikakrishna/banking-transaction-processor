@@ -2,6 +2,7 @@ package com.example.banking.controller;
 
 import com.example.banking.dto.AmountRequest;
 import com.example.banking.dto.CreateAccountResponse;
+import com.example.banking.dto.TransferRequest;
 import com.example.banking.service.AccountService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +42,18 @@ public class AccountController {
             @Valid @RequestBody AmountRequest request) {
 
         accountService.withdraw(accountId, request.amount());
+
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/transfer")
+    public ResponseEntity<Void> transfer(
+            @Valid @RequestBody TransferRequest request) {
+
+        accountService.transfer(
+                request.fromAccount(),
+                request.toAccount(),
+                request.amount());
 
         return ResponseEntity.noContent().build();
     }
