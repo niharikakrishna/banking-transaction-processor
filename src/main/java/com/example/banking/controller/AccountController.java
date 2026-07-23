@@ -1,9 +1,6 @@
 package com.example.banking.controller;
 
-import com.example.banking.dto.AmountRequest;
-import com.example.banking.dto.BalanceResponse;
-import com.example.banking.dto.CreateAccountResponse;
-import com.example.banking.dto.TransferRequest;
+import com.example.banking.dto.*;
 import com.example.banking.service.AccountService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -67,5 +65,13 @@ public class AccountController {
         BigDecimal balance = accountService.getBalance(accountId);
 
         return ResponseEntity.ok(new BalanceResponse(balance));
+    }
+
+    @GetMapping("/{accountId}/transactions")
+    public ResponseEntity<List<TransactionResponse>> getTransactions(
+            @PathVariable UUID accountId) {
+
+        return ResponseEntity.ok(
+                accountService.getTransactions(accountId));
     }
 }

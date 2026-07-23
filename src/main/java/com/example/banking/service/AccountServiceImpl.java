@@ -115,7 +115,18 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public List<TransactionResponse> getTransactions(UUID accountId) {
-        return null;
+
+        Account account = getAccount(accountId);
+
+        return transactionRepository
+                .findByAccountOrderByTimestampDesc(account)
+                .stream()
+                .map(transaction -> new TransactionResponse(
+                        transaction.getTransactionId(),
+                        transaction.getTransactionType(),
+                        transaction.getAmount(),
+                        transaction.getTimestamp()))
+                .toList();
     }
 
     private Account getAccount(UUID accountId) {
