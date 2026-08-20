@@ -44,9 +44,10 @@ public class AccountController {
     @PostMapping("/{accountId}/withdraw")
     public ResponseEntity<Void> withdraw(
             @PathVariable UUID accountId,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
             @Valid @RequestBody AmountRequest request) {
 
-        accountService.withdraw(accountId, request.amount());
+        accountService.withdraw(accountId, request.amount(), idempotencyKey);
 
         return ResponseEntity.noContent().build();
     }

@@ -31,4 +31,7 @@ public class Transaction {
     private BigDecimal amount;
 
     private LocalDateTime timestamp;
+
+    @Column(unique = true)
+    private String idempotencyKey;
 }

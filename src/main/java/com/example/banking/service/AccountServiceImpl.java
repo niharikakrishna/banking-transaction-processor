@@ -124,10 +124,24 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public void withdraw(UUID accountId, BigDecimal amount) {
+    @Transactional
+    public void withdraw(
+            UUID accountId,
+            BigDecimal amount,
+            String idempotencyKey) {
 
         if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new InvalidAmountException("Amount must be greater than zero.");
+            throw new InvalidAmountException(
+                    "Amount must be greater than zero."
+            );
+        }
+
+        // Check if this request was already processed
+        if (transactionRepository
+                .findByIdempotencyKey(idempotencyKey)
+                .isPresent()) {
+
+            return;
         }
 
         Account account = getAccount(accountId);
@@ -140,7 +154,12 @@ public class AccountServiceImpl implements AccountService {
 
         accountRepository.save(account);
 
-        recordTransaction(account, TransactionType.WITHDRAWAL, amount);
+        recordTransaction(
+                account,
+                TransactionType.WITHDRAWAL,
+                amount,
+                idempotencyKey
+        );
     }
 
     @Override
@@ -217,5 +236,22 @@ public class AccountServiceImpl implements AccountService {
 
         transactionRepository.save(transaction);
         return transaction;
+    }
+
+    private Transaction recordTransaction(
+            Account account,
+            TransactionType transactionType,
+            BigDecimal amount,
+            String idempotencyKey) {
+
+        Transaction transaction = Transaction.builder()
+                .account(account)
+                .transactionType(transactionType)
+                .amount(amount)
+                .idempotencyKey(idempotencyKey)
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        return transactionRepository.save(transaction);
     }
 }

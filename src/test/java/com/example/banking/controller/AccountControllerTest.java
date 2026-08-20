@@ -63,16 +63,17 @@ class AccountControllerTest {
     @Test
     void shouldWithdraw() {
 
+        String idempotencyKey = "xyz";
         UUID accountId = UUID.randomUUID();
         AmountRequest request = new AmountRequest(BigDecimal.valueOf(250));
 
         ResponseEntity<Void> response =
-                accountController.withdraw(accountId, request);
+                accountController.withdraw(accountId, idempotencyKey, request);
 
         assertEquals(204, response.getStatusCode().value());
 
         verify(accountService)
-                .withdraw(accountId, BigDecimal.valueOf(250));
+                .withdraw(accountId, BigDecimal.valueOf(250), idempotencyKey);
     }
 
     @Test

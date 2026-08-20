@@ -13,7 +13,7 @@ public interface AccountService {
 
     DepositResponse deposit(UUID accountId, BigDecimal amount, String idempotencyKey);
 
-    void withdraw(UUID accountId, BigDecimal amount);
+    void withdraw(UUID accountId, BigDecimal amount, String idempotencyKey);
 
     void transfer(UUID fromAccount, UUID toAccount, BigDecimal amount);
 

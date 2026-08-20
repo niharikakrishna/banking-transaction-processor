@@ -187,6 +187,7 @@ class AccountServiceImplTest {
     @Test
     void shouldWithdrawSuccessfully() {
 
+        String idempotencyKey = "xyz";
         UUID accountId = UUID.randomUUID();
 
         Account account = buildAccount(BigDecimal.valueOf(1000));
@@ -194,7 +195,7 @@ class AccountServiceImplTest {
         when(accountRepository.findById(accountId))
                 .thenReturn(Optional.of(account));
 
-        accountService.withdraw(accountId, BigDecimal.valueOf(400));
+        accountService.withdraw(accountId, BigDecimal.valueOf(400), idempotencyKey);
 
         assertEquals(
                 BigDecimal.valueOf(600),
@@ -208,6 +209,7 @@ class AccountServiceImplTest {
     @Test
     void shouldRecordWithdrawalTransaction() {
 
+        String idempotencyKey = "xyz";
         UUID accountId = UUID.randomUUID();
 
         Account account = buildAccount(BigDecimal.valueOf(1000));
@@ -215,7 +217,7 @@ class AccountServiceImplTest {
         when(accountRepository.findById(accountId))
                 .thenReturn(Optional.of(account));
 
-        accountService.withdraw(accountId, BigDecimal.valueOf(200));
+        accountService.withdraw(accountId, BigDecimal.valueOf(200), idempotencyKey);
 
         ArgumentCaptor<Transaction> captor =
                 ArgumentCaptor.forClass(Transaction.class);
@@ -232,11 +234,12 @@ class AccountServiceImplTest {
     @Test
     void shouldThrowExceptionWhenWithdrawalAmountIsZero() {
 
+        String idempotencyKey = "xyz";
         UUID accountId = UUID.randomUUID();
 
         assertThrows(
                 InvalidAmountException.class,
-                () -> accountService.withdraw(accountId, BigDecimal.ZERO)
+                () -> accountService.withdraw(accountId, BigDecimal.ZERO, idempotencyKey)
         );
 
         verify(accountRepository, never()).findById(any());
@@ -245,11 +248,12 @@ class AccountServiceImplTest {
     @Test
     void shouldThrowExceptionWhenWithdrawalAmountIsNegative() {
 
+        String idempotencyKey = "xyz";
         UUID accountId = UUID.randomUUID();
 
         assertThrows(
                 InvalidAmountException.class,
-                () -> accountService.withdraw(accountId, BigDecimal.valueOf(-10))
+                () -> accountService.withdraw(accountId, BigDecimal.valueOf(-10), idempotencyKey)
         );
 
         verify(accountRepository, never()).findById(any());
@@ -258,6 +262,7 @@ class AccountServiceImplTest {
     @Test
     void shouldThrowExceptionWhenInsufficientFunds() {
 
+        String idempotencyKey = "xyz";
         UUID accountId = UUID.randomUUID();
 
         Account account = buildAccount(BigDecimal.valueOf(500));
@@ -267,7 +272,7 @@ class AccountServiceImplTest {
 
         assertThrows(
                 InsufficientFundsException.class,
-                () -> accountService.withdraw(accountId, BigDecimal.valueOf(600))
+                () -> accountService.withdraw(accountId, BigDecimal.valueOf(600), idempotencyKey)
         );
 
         verify(accountRepository, never()).save(any());
@@ -277,6 +282,7 @@ class AccountServiceImplTest {
     @Test
     void shouldThrowExceptionWhenWithdrawAccountDoesNotExist() {
 
+        String idempotencyKey = "xyz";
         UUID accountId = UUID.randomUUID();
 
         when(accountRepository.findById(accountId))
@@ -284,7 +290,7 @@ class AccountServiceImplTest {
 
         assertThrows(
                 AccountNotFoundException.class,
-                () -> accountService.withdraw(accountId, BigDecimal.valueOf(100))
+                () -> accountService.withdraw(accountId, BigDecimal.valueOf(100), idempotencyKey)
         );
 
         verify(accountRepository).findById(accountId);
