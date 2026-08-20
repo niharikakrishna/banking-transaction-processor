@@ -39,4 +39,13 @@ public class GlobalExceptionHandler {
         return ResponseEntity.internalServerError()
                 .body("Something went wrong!");
     }
+
+    @ExceptionHandler(IdempotencyKeyReuseException.class)
+    public ResponseEntity<String> handleIdempotencyKeyReuse(
+            IdempotencyKeyReuseException ex) {
+
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(ex.getMessage());
+    }
 }

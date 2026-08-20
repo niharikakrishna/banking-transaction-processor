@@ -47,16 +47,17 @@ class AccountControllerTest {
     @Test
     void shouldDeposit() {
 
+        String idempotencyKey = "xyz";
         UUID accountId = UUID.randomUUID();
         AmountRequest request = new AmountRequest(BigDecimal.valueOf(500));
 
-        ResponseEntity<Void> response =
-                accountController.deposit(accountId, request);
+        ResponseEntity<DepositResponse> response =
+                accountController.deposit(accountId, idempotencyKey, request);
 
-        assertEquals(204, response.getStatusCode().value());
+        assertEquals(200, response.getStatusCode().value());
 
         verify(accountService)
-                .deposit(accountId, BigDecimal.valueOf(500));
+                .deposit(accountId, BigDecimal.valueOf(500), idempotencyKey);
     }
 
     @Test
@@ -139,7 +140,7 @@ class AccountControllerTest {
         assertNotNull(response.getBody());
         assertEquals(1, response.getBody().size());
 
-        TransactionResponse result = response.getBody().get(0);
+        TransactionResponse result = response.getBody().getFirst();
 
         assertEquals(TransactionType.DEPOSIT, result.transactionType());
         assertEquals(BigDecimal.valueOf(500), result.amount());

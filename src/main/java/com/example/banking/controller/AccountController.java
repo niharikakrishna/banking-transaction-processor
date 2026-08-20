@@ -27,13 +27,18 @@ public class AccountController {
     }
 
     @PostMapping("/{accountId}/deposit")
-    public ResponseEntity<Void> deposit(
+    public ResponseEntity<DepositResponse> deposit(
             @PathVariable UUID accountId,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
             @Valid @RequestBody AmountRequest request) {
 
-        accountService.deposit(accountId, request.amount());
+        DepositResponse response = accountService.deposit(
+                accountId,
+                request.amount(),
+                idempotencyKey
+        );
 
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/{accountId}/withdraw")

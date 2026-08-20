@@ -8,6 +8,7 @@ import com.example.banking.exception.AccountNotFoundException;
 import com.example.banking.exception.InsufficientFundsException;
 import com.example.banking.exception.InvalidAmountException;
 import com.example.banking.repository.AccountRepository;
+import com.example.banking.repository.IdempotencyRecordRepository;
 import com.example.banking.repository.TransactionRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -33,6 +34,9 @@ class AccountServiceImplTest {
 
     @Mock
     private TransactionRepository transactionRepository;
+
+    @Mock
+    private IdempotencyRecordRepository idempotencyRecordRepository;
 
     @InjectMocks
     private AccountServiceImpl accountService;
@@ -61,6 +65,7 @@ class AccountServiceImplTest {
     @Test
     void shouldDepositSuccessfully() {
 
+        String idempotencyKey = "xyz";
         UUID accountId = UUID.randomUUID();
 
         Account account = buildAccount(BigDecimal.valueOf(1000));
@@ -68,7 +73,7 @@ class AccountServiceImplTest {
         when(accountRepository.findById(accountId))
                 .thenReturn(Optional.of(account));
 
-        accountService.deposit(accountId, BigDecimal.valueOf(500));
+        accountService.deposit(accountId, BigDecimal.valueOf(500), idempotencyKey);
 
         assertEquals(
                 BigDecimal.valueOf(1500),
@@ -83,6 +88,7 @@ class AccountServiceImplTest {
     @Test
     void shouldRecordDepositTransaction() {
 
+        String idempotencyKey = "xyz";
         UUID accountId = UUID.randomUUID();
 
         Account account = buildAccount(BigDecimal.valueOf(1000));
@@ -90,7 +96,7 @@ class AccountServiceImplTest {
         when(accountRepository.findById(accountId))
                 .thenReturn(Optional.of(account));
 
-        accountService.deposit(accountId, BigDecimal.valueOf(250));
+        accountService.deposit(accountId, BigDecimal.valueOf(250), idempotencyKey);
 
         ArgumentCaptor<Transaction> captor =
                 ArgumentCaptor.forClass(Transaction.class);
@@ -120,13 +126,15 @@ class AccountServiceImplTest {
     @Test
     void shouldThrowExceptionWhenDepositAmountIsZero() {
 
+        String idempotencyKey = "xyz";
         UUID accountId = UUID.randomUUID();
 
         assertThrows(
                 InvalidAmountException.class,
                 () -> accountService.deposit(
                         accountId,
-                        BigDecimal.ZERO
+                        BigDecimal.ZERO,
+                        idempotencyKey
                 )
         );
 
@@ -137,13 +145,15 @@ class AccountServiceImplTest {
     @Test
     void shouldThrowExceptionWhenDepositAmountIsNegative() {
 
+        String idempotencyKey = "xyz";
         UUID accountId = UUID.randomUUID();
 
         assertThrows(
                 InvalidAmountException.class,
                 () -> accountService.deposit(
                         accountId,
-                        BigDecimal.valueOf(-100)
+                        BigDecimal.valueOf(-100),
+                        idempotencyKey
                 )
         );
 
@@ -154,6 +164,7 @@ class AccountServiceImplTest {
     @Test
     void shouldThrowExceptionWhenDepositAccountDoesNotExist() {
 
+        String idempotencyKey = "xyz";
         UUID accountId = UUID.randomUUID();
 
         when(accountRepository.findById(accountId))
@@ -163,7 +174,8 @@ class AccountServiceImplTest {
                 AccountNotFoundException.class,
                 () -> accountService.deposit(
                         accountId,
-                        BigDecimal.valueOf(500)
+                        BigDecimal.valueOf(500),
+                        idempotencyKey
                 )
         );
 
@@ -498,12 +510,12 @@ Account account = buildAccount(BigDecimal.valueOf(1000));
 
         assertEquals(
                 TransactionType.DEPOSIT,
-                response.get(0).transactionType()
+                response.getFirst().transactionType()
         );
 
         assertEquals(
                 BigDecimal.valueOf(500),
-                response.get(0).amount()
+                response.getFirst().amount()
         );
 
         verify(transactionRepository)

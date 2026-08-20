@@ -1,9 +1,6 @@
 package com.example.banking.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -21,6 +18,7 @@ public class Account {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID accountId;
 
+    @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal balance;
 
     public void deposit(BigDecimal amount) {

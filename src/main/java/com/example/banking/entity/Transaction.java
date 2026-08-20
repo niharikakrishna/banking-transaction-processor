@@ -27,6 +27,7 @@ public class Transaction {
     @Enumerated(EnumType.STRING)
     private TransactionType transactionType;
 
+    @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal amount;
 
     private LocalDateTime timestamp;

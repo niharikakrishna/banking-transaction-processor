@@ -1,5 +1,6 @@
 package com.example.banking.service;
 
+import com.example.banking.dto.DepositResponse;
 import com.example.banking.dto.TransactionResponse;
 
 import java.math.BigDecimal;
@@ -10,7 +11,7 @@ public interface AccountService {
 
     UUID createAccount();
 
-    void deposit(UUID accountId, BigDecimal amount);
+    DepositResponse deposit(UUID accountId, BigDecimal amount, String idempotencyKey);
 
     void withdraw(UUID accountId, BigDecimal amount);
 

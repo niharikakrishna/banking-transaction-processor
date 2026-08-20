@@ -66,4 +66,23 @@ class GlobalExceptionHandlerTest {
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         assertEquals("Something went wrong!", response.getBody());
     }
+
+    @Test
+    void shouldReturnConflictWhenIdempotencyKeyIsReused() {
+        // Arrange
+        String errorMessage =
+                "Idempotency key was already used for a different request.";
+
+        IdempotencyKeyReuseException exception =
+                new IdempotencyKeyReuseException(errorMessage);
+
+        // Act
+        ResponseEntity<String> response =
+                exceptionHandler
+                        .handleIdempotencyKeyReuse(exception);
+
+        // Assert
+        assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+        assertEquals(errorMessage, response.getBody());
+    }
 }
