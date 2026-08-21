@@ -16,6 +16,10 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -484,8 +488,10 @@ class AccountServiceImplTest {
     void shouldReturnTransactionsSuccessfully() {
 
         UUID accountId = UUID.randomUUID();
+        int page = 0;
+        int size = 10;
 
-Account account = buildAccount(BigDecimal.valueOf(1000));
+        Account account = buildAccount(BigDecimal.valueOf(1000));
 
         Transaction transaction1 = Transaction.builder()
                 .transactionId(UUID.randomUUID())
@@ -503,70 +509,110 @@ Account account = buildAccount(BigDecimal.valueOf(1000));
                 .timestamp(LocalDateTime.now().minusMinutes(5))
                 .build();
 
+        Pageable pageable = PageRequest.of(page, size);
+
+        Page<Transaction> transactionPage = new PageImpl<>(
+                List.of(transaction1, transaction2),
+                pageable,
+                2
+        );
+
         when(accountRepository.findById(accountId))
                 .thenReturn(Optional.of(account));
 
-        when(transactionRepository.findByAccountOrderByTimestampDesc(account))
-                .thenReturn(List.of(transaction1, transaction2));
+        when(transactionRepository.findByAccountOrderByTimestampDesc(
+                account,
+                pageable
+        )).thenReturn(transactionPage);
 
-        List<TransactionResponse> response =
-                accountService.getTransactions(accountId);
+        Page<TransactionResponse> response =
+                accountService.getTransactions(accountId, page, size);
 
-        assertEquals(2, response.size());
+        assertEquals(2, response.getContent().size());
 
         assertEquals(
                 TransactionType.DEPOSIT,
-                response.getFirst().transactionType()
+                response.getContent().getFirst().transactionType()
         );
 
         assertEquals(
                 BigDecimal.valueOf(500),
-                response.getFirst().amount()
+                response.getContent().getFirst().amount()
         );
 
+        assertEquals(2, response.getTotalElements());
+
         verify(transactionRepository)
-                .findByAccountOrderByTimestampDesc(account);
+                .findByAccountOrderByTimestampDesc(
+                        account,
+                        pageable
+                );
     }
 
     @Test
     void shouldReturnEmptyTransactionList() {
 
         UUID accountId = UUID.randomUUID();
+        int page = 0;
+        int size = 10;
 
         Account account = buildAccount(BigDecimal.ZERO);
+
+        Pageable pageable = PageRequest.of(page, size);
+
+        Page<Transaction> transactionPage = new PageImpl<>(
+                List.of(),
+                pageable,
+                0
+        );
 
         when(accountRepository.findById(accountId))
                 .thenReturn(Optional.of(account));
 
-        when(transactionRepository.findByAccountOrderByTimestampDesc(account))
-                .thenReturn(List.of());
+        when(transactionRepository.findByAccountOrderByTimestampDesc(
+                account,
+                pageable
+        )).thenReturn(transactionPage);
 
-        List<TransactionResponse> response =
-                accountService.getTransactions(accountId);
+        Page<TransactionResponse> response =
+                accountService.getTransactions(accountId, page, size);
 
-        assertTrue(response.isEmpty());
+        assertTrue(response.getContent().isEmpty());
+        assertEquals(0, response.getTotalElements());
 
         verify(transactionRepository)
-                .findByAccountOrderByTimestampDesc(account);
+                .findByAccountOrderByTimestampDesc(
+                        account,
+                        pageable
+                );
     }
 
     @Test
     void shouldThrowExceptionWhenGettingTransactionsForUnknownAccount() {
 
         UUID accountId = UUID.randomUUID();
+        int page = 0;
+        int size = 10;
 
         when(accountRepository.findById(accountId))
                 .thenReturn(Optional.empty());
 
         assertThrows(
                 AccountNotFoundException.class,
-                () -> accountService.getTransactions(accountId)
+                () -> accountService.getTransactions(
+                        accountId,
+                        page,
+                        size
+                )
         );
 
         verify(accountRepository).findById(accountId);
 
         verify(transactionRepository, never())
-                .findByAccountOrderByTimestampDesc(any());
+                .findByAccountOrderByTimestampDesc(
+                        any(Account.class),
+                        any(Pageable.class)
+                );
     }
 
     private Account buildAccount(BigDecimal balance) {

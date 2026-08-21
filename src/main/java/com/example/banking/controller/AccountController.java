@@ -4,11 +4,11 @@ import com.example.banking.dto.*;
 import com.example.banking.service.AccountService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -74,10 +74,16 @@ public class AccountController {
     }
 
     @GetMapping("/{accountId}/transactions")
-    public ResponseEntity<List<TransactionResponse>> getTransactions(
-            @PathVariable UUID accountId) {
+    public ResponseEntity<Page<TransactionResponse>> getTransactions(
+            @PathVariable UUID accountId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
 
         return ResponseEntity.ok(
-                accountService.getTransactions(accountId));
+                accountService.getTransactions(
+                        accountId,
+                        page,
+                        size)
+        );
     }
 }

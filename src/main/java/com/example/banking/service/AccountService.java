@@ -2,9 +2,9 @@ package com.example.banking.service;
 
 import com.example.banking.dto.DepositResponse;
 import com.example.banking.dto.TransactionResponse;
+import org.springframework.data.domain.Page;
 
 import java.math.BigDecimal;
-import java.util.List;
 import java.util.UUID;
 
 public interface AccountService {
@@ -19,6 +19,6 @@ public interface AccountService {
 
     BigDecimal getBalance(UUID accountId);
 
-    List<TransactionResponse> getTransactions(UUID accountId);
+    Page<TransactionResponse> getTransactions(UUID accountId, int page, int size);
 
 }

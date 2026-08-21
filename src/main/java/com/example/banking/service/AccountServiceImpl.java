@@ -14,12 +14,14 @@ import com.example.banking.repository.AccountRepository;
 import com.example.banking.repository.IdempotencyRecordRepository;
 import com.example.banking.repository.TransactionRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -154,9 +156,8 @@ public class AccountServiceImpl implements AccountService {
 
         accountRepository.save(account);
 
-        recordTransaction(
+        recordWithdrawalTransaction(
                 account,
-                TransactionType.WITHDRAWAL,
                 amount,
                 idempotencyKey
         );
@@ -202,19 +203,18 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public List<TransactionResponse> getTransactions(UUID accountId) {
+    public Page<TransactionResponse> getTransactions(UUID accountId, int page, int size) {
 
         Account account = getAccount(accountId);
+        Pageable pageable = PageRequest.of(page, size);
 
         return transactionRepository
-                .findByAccountOrderByTimestampDesc(account)
-                .stream()
+                .findByAccountOrderByTimestampDesc(account, pageable)
                 .map(transaction -> new TransactionResponse(
                         transaction.getTransactionId(),
                         transaction.getTransactionType(),
                         transaction.getAmount(),
-                        transaction.getTimestamp()))
-                .toList();
+                        transaction.getTimestamp()));
     }
 
     private Account getAccount(UUID accountId) {
@@ -238,20 +238,19 @@ public class AccountServiceImpl implements AccountService {
         return transaction;
     }
 
-    private Transaction recordTransaction(
+    private void recordWithdrawalTransaction(
             Account account,
-            TransactionType transactionType,
             BigDecimal amount,
             String idempotencyKey) {
 
         Transaction transaction = Transaction.builder()
                 .account(account)
-                .transactionType(transactionType)
+                .transactionType(TransactionType.WITHDRAWAL)
                 .amount(amount)
                 .idempotencyKey(idempotencyKey)
                 .timestamp(LocalDateTime.now())
                 .build();
 
-        return transactionRepository.save(transaction);
+        transactionRepository.save(transaction);
     }
 }

@@ -8,6 +8,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.http.ResponseEntity;
 
 import java.math.BigDecimal;
@@ -131,21 +133,37 @@ class AccountControllerTest {
                         LocalDateTime.now()
                 );
 
-        when(accountService.getTransactions(accountId))
-                .thenReturn(List.of(transaction));
+        Page<TransactionResponse> transactionPage =
+                new PageImpl<>(List.of(transaction));
 
-        ResponseEntity<List<TransactionResponse>> response =
-                accountController.getTransactions(accountId);
+        when(accountService.getTransactions(accountId, 0, 10))
+                .thenReturn(transactionPage);
+
+        ResponseEntity<Page<TransactionResponse>> response =
+                accountController.getTransactions(accountId, 0, 10);
 
         assertEquals(200, response.getStatusCode().value());
+
         assertNotNull(response.getBody());
-        assertEquals(1, response.getBody().size());
 
-        TransactionResponse result = response.getBody().getFirst();
+        assertEquals(1, response.getBody().getContent().size());
 
-        assertEquals(TransactionType.DEPOSIT, result.transactionType());
-        assertEquals(BigDecimal.valueOf(500), result.amount());
+        TransactionResponse result =
+                response.getBody()
+                        .getContent()
+                        .getFirst();
 
-        verify(accountService).getTransactions(accountId);
+        assertEquals(
+                TransactionType.DEPOSIT,
+                result.transactionType()
+        );
+
+        assertEquals(
+                BigDecimal.valueOf(500),
+                result.amount()
+        );
+
+        verify(accountService)
+                .getTransactions(accountId, 0, 10);
     }
 }
