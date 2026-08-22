@@ -4,8 +4,17 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+
+import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class GlobalExceptionHandlerTest {
 
@@ -69,20 +78,54 @@ class GlobalExceptionHandlerTest {
 
     @Test
     void shouldReturnConflictWhenIdempotencyKeyIsReused() {
-        // Arrange
         String errorMessage =
                 "Idempotency key was already used for a different request.";
 
         IdempotencyKeyReuseException exception =
                 new IdempotencyKeyReuseException(errorMessage);
 
-        // Act
         ResponseEntity<String> response =
                 exceptionHandler
                         .handleIdempotencyKeyReuse(exception);
 
-        // Assert
         assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
         assertEquals(errorMessage, response.getBody());
+    }
+
+    @Test
+    void shouldReturnBadRequestForValidationException() {
+
+        MethodArgumentNotValidException exception =
+                mock(MethodArgumentNotValidException.class);
+
+        BindingResult bindingResult = mock(BindingResult.class);
+
+        FieldError fieldError = new FieldError(
+                "amountRequest",
+                "amount",
+                "Amount must be greater than zero"
+        );
+
+        when(exception.getBindingResult())
+                .thenReturn(bindingResult);
+
+        when(bindingResult.getFieldErrors())
+                .thenReturn(List.of(fieldError));
+
+        ResponseEntity<Map<String, String>> response =
+                exceptionHandler
+                        .handleValidationException(exception);
+
+        assertEquals(
+                HttpStatus.BAD_REQUEST,
+                response.getStatusCode()
+        );
+
+        assertNotNull(response.getBody());
+
+        assertEquals(
+                "Amount must be greater than zero",
+                response.getBody().get("amount")
+        );
     }
 }
