@@ -2,6 +2,7 @@ package com.example.banking.controller;
 
 import com.example.banking.dto.*;
 import com.example.banking.service.AccountService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -14,6 +15,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/accounts")
 @RequiredArgsConstructor
+@SecurityRequirement(name = "bearerAuth")
 public class AccountController {
 
     private final AccountService accountService;
